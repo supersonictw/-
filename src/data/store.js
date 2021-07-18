@@ -1,4 +1,4 @@
-/*jshint esversion: 8 */
+/* jshint esversion: 8 */
 /*
     XIA - LINE Web Client
     ---
@@ -6,53 +6,33 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 */
 
-import Vue from "vue";
-import Vuex from "vuex";
-
-import hash from "js-sha256";
+import Vue from 'vue';
+import Vuex from 'vuex';
+import System from '@/computes/system';
 
 Vue.use(Vuex);
 
 const Store = new Vuex.Store({
   state: {
-    authToken: "",
-    ready: 0,
     loaded: 0,
-    profile: {},
-    idbXia: null,
-    idbUser: null,
-    lastMessages: new Map(),
-    chatIdsHashed: new Map(),
+    notifications: [],
+    statusMessage: null,
+    system: new System(),
   },
   mutations: {
-    registerIndexedDB(state, handler) {
-      state.idbXia = handler.xia;
-      state.idbUser = handler.user;
-    },
-    registerAuthToken(state, authToken) {
-      state.authToken = authToken;
-    },
-    registerChatIdHashed(state, { targetId, idHashed }) {
-      state.chatIdsHashed.set(idHashed, targetId);
-    },
-    unregisterChatIdHashed(state, idHashed) {
-      state.chatIdsHashed.delete(idHashed);
-    },
-    setReady(state) {
-      state.ready++;
-    },
     setLoaded(state) {
       state.loaded++;
     },
-    updateProfile(state, profileData) {
-      state.profile.userId = profileData.mid;
-      state.profile.userIdHashed = hash.sha256(profileData.mid);
-      state.profile.displayName = profileData.displayName;
-      state.profile.picturePath = profileData.picturePath;
-      state.profile.statusMessage = profileData.statusMessage;
+    registerNewSystemInstance(state, system) {
+      if (state.system) delete state.system;
+      state.system = system;
+    },
+    notify(state, {title, description}) {
+      state.notifications.push({title, description});
+      setTimeout(state.notifications.pop(), 3000);
     },
   },
 });

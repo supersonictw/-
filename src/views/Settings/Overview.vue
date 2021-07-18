@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -51,10 +51,10 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
 export default {
-  name: "Settings_Overview",
+  name: 'Settings_Overview',
   methods: {
     enterSetting(routerData) {
       this.$router.push(routerData);
@@ -70,38 +70,38 @@ export default {
   },
   data() {
     return {
-      filterName: "",
+      filterName: '',
       overview: [
         {
-          displayName: "Profile",
-          description: "Customize your LINE Profile.",
-          icon: require("@/assets/icons/profile.svg"),
+          displayName: 'Profile',
+          description: 'Customize your LINE Profile.',
+          icon: require('@/assets/icons/profile.svg'),
           router: {
-            name: Constant.ROUTER_TAG_SETTINGS_PROFILE,
+            name: Constant.ROUTER_TAG.SETTINGS.PROFILE,
           },
         },
         {
-          displayName: "Notification",
-          description: "Set up how XIA notice you while news coming.",
-          icon: require("@/assets/icons/notification.svg"),
+          displayName: 'Notification',
+          description: 'Set up how XIA notice you while news coming.',
+          icon: require('@/assets/icons/notification.svg'),
           router: {
-            name: Constant.ROUTER_TAG_SETTINGS_NOTIFICATION,
+            name: Constant.ROUTER_TAG.SETTINGS.NOTIFICATION,
           },
         },
         {
-          displayName: "Preview Features",
-          description: "Enable/Disable the features that aren't complete.",
-          icon: require("@/assets/icons/preview_features.svg"),
+          displayName: 'Preview Features',
+          description: 'Enable/Disable the features that aren\'t complete.',
+          icon: require('@/assets/icons/preview_features.svg'),
           router: {
-            name: Constant.ROUTER_TAG_SETTINGS_PREVIEW,
+            name: Constant.ROUTER_TAG.SETTINGS.PREVIEW,
           },
         },
         {
-          displayName: "About",
-          description: "The information of XIA.",
-          icon: require("@/assets/icons/about.svg"),
+          displayName: 'About',
+          description: 'The information of XIA.',
+          icon: require('@/assets/icons/about.svg'),
           router: {
-            name: Constant.ROUTER_TAG_ABOUT,
+            name: Constant.ROUTER_TAG.ABOUT,
           },
         },
       ],

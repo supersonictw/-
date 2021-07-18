@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -16,8 +16,9 @@
         class="icon"
         v-if="pictureStatus"
         :src="`${mediaURL}/${pictureStatus}`"
+        :alt="displayName"
       />
-      <img class="icon" v-else src="@/assets/logo.svg" />
+      <img class="icon" v-else src="@/assets/logo.svg" :alt="displayName" />
       <h1 id="displayName">{{ displayName }}</h1>
       <div id="statusMessage-box">
         <p id="statusMessage" v-html="statusMessageWithLinesAndEscaped"></p>
@@ -26,19 +27,19 @@
     <div v-if="groupInviting" class="contact-buttons">
       <a title="Accept" href="#" @click.prevent="replyGroupInvitation(true)">
         <div class="contact-button">
-          <img class="icon" src="@/assets/icons/accept.svg" />
+          <img class="icon" src="@/assets/icons/accept.svg"  alt="Accept"/>
         </div>
       </a>
       <a title="Reject" href="#" @click.prevent="replyGroupInvitation(false)">
         <div class="contact-button">
-          <img class="icon" src="@/assets/icons/reject.svg" />
+          <img class="icon" src="@/assets/icons/reject.svg"  alt="Reject"/>
         </div>
       </a>
     </div>
     <div v-else class="contact-buttons">
       <a title="Chat" href="#" @click.prevent="enterChat">
         <div class="contact-button">
-          <img class="icon" src="@/assets/icons/chat.svg" />
+          <img class="icon" src="@/assets/icons/chat.svg"  alt="Chat"/>
         </div>
       </a>
     </div>
@@ -46,100 +47,103 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
-import lineClient from "@/computes/line.js";
-import lineType from "@/computes/protocol/line_types.js";
+import lineType from '@/computes/protocol/line_types.js';
 
 export default {
-  name: "Contact",
+  name: 'Contact',
   components: {
     Back,
   },
   methods: {
     async fetchContactProfile() {
       if (this.targetId === -1) {
-        if (!this.$store.state.ready) {
-          this.$router.replace({
-            name: Constant.ROUTER_TAG_REDIRECT,
+        if (!this.$store.state.system.ready) {
+          await this.$router.replace({
+            name: Constant.ROUTER_TAG.REDIRECT,
             params: {
-              next: Constant.ROUTER_TAG_CONTACT,
-              data: { targetIdHashed: this.targetIdHashed },
+              next: Constant.ROUTER_TAG.CONTACT,
+              data: {targetIdHash: this.targetIdHash},
             },
           });
           return false;
         }
       }
-      if (this.targetId.startsWith("u")) {
-        const userInfo = await this.$store.state.idbUser.get(
-          Constant.IDB_USER_CONTACT,
-          this.targetId
-        );
+      if (this.targetId.startsWith('u')) {
+        const userInfo = await this.$store.state
+            .system.instances.idb.user.get(
+                Constant.IDB.USER.CONTACT,
+                this.targetId,
+            );
         this.displayName = userInfo.displayName;
         this.statusMessage = userInfo.statusMessage;
         this.pictureStatus = userInfo.pictureStatus;
         this.contactType = lineType.MIDType.USER;
-      } else if (this.targetId.startsWith("c")) {
-        let statusMessageArray = [];
-        let groupInfo = await this.$store.state.idbUser.get(
-          Constant.IDB_USER_GROUP_JOINED,
-          this.targetId
-        );
+      } else if (this.targetId.startsWith('c')) {
+        const statusMessageArray = [];
+        let groupInfo = await this.$store.state
+            .system.instances.idb.user.get(
+                Constant.IDB.USER.GROUP.JOINED,
+                this.targetId,
+            );
         if (!groupInfo) {
-          groupInfo = await this.$store.state.idbUser.get(
-            Constant.IDB_USER_GROUP_INVITED,
-            this.targetId
-          );
+          groupInfo = await this.$store.state
+              .system.instances.idb.user.get(
+                  Constant.IDB.USER.GROUP.INVITED,
+                  this.targetId,
+              );
           this.groupInviting = true;
           statusMessageArray.push(
-            `${Constant.GROUP_INVITING_ICON} This is a Group Invitation.\n`
+              `${Constant.GROUP_INVITING_ICON} This is a Group Invitation.\n`,
           );
         }
         const membersCount = groupInfo.members ? groupInfo.members.length : 0;
         const invitesCount = groupInfo.invitee ? groupInfo.invitee.length : 0;
         statusMessageArray.push(
-          `Members: ${membersCount}\nInvites: ${invitesCount}`
+            `Members: ${membersCount}\nInvites: ${invitesCount}`,
         );
         this.displayName = groupInfo.name;
-        this.statusMessage = statusMessageArray.join("\n");
+        this.statusMessage = statusMessageArray.join('\n');
         this.pictureStatus = groupInfo.pictureStatus;
         this.contactType = lineType.MIDType.GROUP;
       } else {
-        this.$router.replace({
-          name: Constant.ROUTER_TAG_ERROR,
-          params: { reason: "Unknown Contact type." },
+        await this.$router.replace({
+          name: Constant.ROUTER_TAG.ERROR,
+          params: {reason: 'Unknown Contact type.'},
         });
       }
     },
     enterChat() {
       this.$router.replace({
-        name: Constant.ROUTER_TAG_CHAT,
-        params: { targetIdHashed: this.targetIdHashed },
+        name: Constant.ROUTER_TAG.CHAT,
+        params: {targetIdHash: this.targetIdHash},
       });
     },
     replyGroupInvitation(status) {
+      const client = this.$store.state.system.clients.query;
       if (status) {
-        this.client.acceptGroupInvitation(
-          Constant.THRIFT_DEFAULT_SEQ,
-          this.targetId
+        client.acceptGroupInvitation(
+            Constant.THRIFT_DEFAULT_SEQ,
+            this.targetId,
         );
         this.enterChat();
       } else {
-        this.client.rejectGroupInvitation(
-          Constant.THRIFT_DEFAULT_SEQ,
-          this.targetId
+        client.rejectGroupInvitation(
+            Constant.THRIFT_DEFAULT_SEQ,
+            this.targetId,
         );
       }
     },
     escapeHtml(text) {
-      let map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#039;',
       };
 
       return text.replace(/[&<>"']/g, function(m) {
@@ -149,28 +153,28 @@ export default {
   },
   computed: {
     targetId() {
-      if (!this.$store.state.ready) {
+      if (!this.$store.state.system.ready) {
         return -1;
       }
-      if (this.$store.state.chatIdsHashed.has(this.targetIdHashed))
-        return this.$store.state.chatIdsHashed.get(this.targetIdHashed);
-      this.$router.replace({ name: Constant.ROUTER_TAG_NOT_FOUND });
-      return "";
+      if (this.$store.state.system.chatRoomIdHash.has(this.targetIdHash)) {
+        return this.$store.state.system.chatRoomIdHash.get(this.targetIdHash);
+      }
+      this.$router.replace({name: Constant.ROUTER_TAG.NOT_FOUND});
+      return '';
     },
     statusMessageWithLinesAndEscaped() {
-      return this.escapeHtml(this.statusMessage).replace(/\n/g, "<br />");
+      return this.escapeHtml(this.statusMessage).replace(/\n/g, '<br />');
     },
   },
-  props: ["targetIdHashed"],
+  props: ['targetIdHash'],
   data() {
     return {
       contactType: 0,
       groupInviting: false,
-      displayName: "Loading...",
-      statusMessage: "Loading...",
+      displayName: 'Loading...',
+      statusMessage: 'Loading...',
       pictureStatus: null,
-      mediaURL: Constant.LINE_MEDIA_URL,
-      client: lineClient(Constant.LINE_QUERY_PATH, this.$store.state.authToken),
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   created() {

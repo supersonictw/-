@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -32,7 +32,7 @@
               src="@/assets/icons/group.svg"
             />Group
           </a>
-          <!-- 
+          <!--
           <a id="room" title="Room" href="#" @click.prevent="enterCreate">
             <img
               class="dropdown-content-icon"
@@ -51,43 +51,44 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
 export default {
-  name: "Profile",
+  name: 'Profile',
   components: {
     Back,
   },
   methods: {
     async waitForFetchProfile() {
       setTimeout(() => {
-        if (this.$store.state.ready) {
+        if (this.$store.state.system.ready) {
           this.fetchProfile();
         } else {
           this.waitForFetchProfile();
         }
-      }, Constant.RETRY_TIMEOUT);
+      }, Constant.TIMEOUT.RETRY);
     },
     fetchProfile() {
-      this.displayName = this.$store.state.profile.displayName;
-      this.statusMessage = this.$store.state.profile.statusMessage;
-      this.picturePath = this.$store.state.profile.picturePath;
+      const profile = this.$store.state.system.profile;
+      this.displayName = profile.displayName;
+      this.picturePath = profile.picturePath;
+      this.statusMessage = profile.statusMessage;
     },
     enterCreate(e) {
       this.$router.push({
-        name: Constant.ROUTER_TAG_CREATE,
-        params: { type: e.target.id },
+        name: Constant.ROUTER_TAG.CREATE,
+        params: {type: e.target.id},
       });
     },
     escapeHtml(text) {
-      let map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#039;',
       };
 
       return text.replace(/[&<>"']/g, function(m) {
@@ -97,15 +98,15 @@ export default {
   },
   computed: {
     statusMessageWithLinesAndEscaped() {
-      return this.escapeHtml(this.statusMessage).replace(/\n/g, "<br />");
+      return this.escapeHtml(this.statusMessage).replace(/\n/g, '<br />');
     },
   },
   data() {
     return {
-      displayName: "Loading...",
-      statusMessage: "Loading...",
+      displayName: 'Loading...',
+      statusMessage: 'Loading...',
       picturePath: null,
-      mediaURL: Constant.LINE_MEDIA_URL,
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   created() {

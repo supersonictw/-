@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -35,48 +35,50 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import hash from "js-sha256";
-import moment from "moment";
+import hash from 'js-sha256';
+import moment from 'moment';
 
-import lineType from "@/computes/protocol/line_types.js";
+import lineType from '@/computes/protocol/line_types.js';
 
 export default {
-  name: "ChatList",
+  name: 'ChatList',
   methods: {
     enterChat(chatId) {
       this.$router.push({
-        name: Constant.ROUTER_TAG_CHAT,
-        params: { targetIdHashed: chatId },
+        name: Constant.ROUTER_TAG.CHAT,
+        params: {targetIdHash: chatId},
       });
     },
     async getContactInfo(message) {
-      if (!this.$store.state.ready) return;
+      if (!this.$store.state.system.ready) return;
       switch (message.toType) {
         case lineType.MIDType.USER: {
           const targetId =
-            message.from_ == this.$store.state.profile.userId
-              ? message.to
-              : message.from_;
-          let contactData = await this.$store.state.idbUser.get(
-            Constant.IDB_USER_CONTACT,
-            targetId
-          );
+            message.from_ === this.$store.state.system.profile.userId ?
+              message.to :
+              message.from_;
+          let contactData = await this.$store.state.system.instances
+              .idb.user.get(
+                  Constant.IDB.USER.CONTACT,
+                  targetId,
+              );
           if (!contactData) {
             contactData = {};
-            contactData.displayName = "Unknown";
+            contactData.displayName = 'Unknown';
           }
           return contactData;
         }
         case lineType.MIDType.GROUP: {
-          let groupData = await this.$store.state.idbUser.get(
-            Constant.IDB_USER_GROUP_JOINED,
-            message.to
-          );
+          let groupData = await this.$store.state.system.instances
+              .idb.user.get(
+                  Constant.IDB.USER.GROUP.JOINED,
+                  message.to,
+              );
           if (!groupData) {
             groupData = {};
-            groupData.displayName = "Unknown";
+            groupData.displayName = 'Unknown';
           } else {
             groupData.displayName = groupData.name;
             delete groupData.name;
@@ -85,25 +87,26 @@ export default {
         }
         default:
           console.error(
-            "Unknown toType in getContactInfo with " + message.toType
+              'Unknown toType in getContactInfo with ' + message.toType,
           );
       }
     },
     async waitForFetchDisplayMessage() {
       setTimeout(() => {
-        if (this.$store.state.ready) {
+        if (this.$store.state.system.ready) {
           this.fetchDisplayMessage();
         } else {
           this.waitForFetchDisplayMessage();
         }
-      }, Constant.RETRY_TIMEOUT);
+      }, Constant.TIMEOUT.RETRY);
     },
     async fetchDisplayMessage() {
-      let cursor = await this.$store.state.idbUser
-        .transaction(Constant.IDB_USER_PREVIEW_MESSAGE_BOX)
-        .store.openCursor();
+      let cursor = await this.$store.state.system
+          .instances.idb.user
+          .transaction(Constant.IDB.USER.PREVIEW_MESSAGE_BOX)
+          .store.openCursor();
       while (cursor) {
-        this.updateDisplayMessage(cursor.value);
+        await this.updateDisplayMessage(cursor.value);
         cursor = await cursor.continue();
       }
       await this.fetchDisplayMessage();
@@ -112,13 +115,13 @@ export default {
       const contactData = await this.getContactInfo(message);
       const displayName = contactData ? contactData.displayName : null;
       const pictureStatus = contactData ? contactData.pictureStatus : null;
-      const targetIdHashed = hash.sha256(message.target);
+      const targetIdHash = hash.sha256(message.target);
       const lastMessage = (function(obj) {
         switch (obj.contentType) {
           case lineType.ContentType.IMAGE:
-            return "(Image)";
+            return '(Image)';
           case lineType.ContentType.STICKER:
-            return "(Sticker)";
+            return '(Sticker)';
           default:
             return obj.text;
         }
@@ -127,10 +130,11 @@ export default {
         message.target in this.previewMessageBox &&
         parseInt(message.createdTime) <
           parseInt(this.previewMessageBox[message.target].time)
-      )
+      ) {
         return;
+      }
       this.$set(this.previewMessageBox, message.target, {
-        id: targetIdHashed,
+        id: targetIdHash,
         time: parseInt(message.createdTime),
         displayName,
         pictureStatus,
@@ -140,23 +144,21 @@ export default {
     timeToReadable(timeValue) {
       const nowValue = +new Date();
       const dateTime = moment(timeValue);
-      if (timeValue - nowValue < 86400) return dateTime.format("hh:mm");
-      return dateTime.format("YYYY/MM/DD");
+      if (timeValue - nowValue < 86400) return dateTime.format('hh:mm');
+      return dateTime.format('YYYY/MM/DD');
     },
   },
   computed: {
     getDisplayMessages() {
       const data = Object.values(this.previewMessageBox);
-      data.sort(function(a, b) {
-        return b.time > a.time;
-      });
+      data.sort((a, b) => b.time > a.time);
       return data;
     },
   },
   data() {
     return {
       previewMessageBox: {},
-      mediaURL: Constant.LINE_MEDIA_URL,
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   mounted() {

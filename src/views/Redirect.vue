@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -16,26 +16,26 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
 export default {
-  name: "Redirect",
-  props: ["next", "data"],
+  name: 'Redirect',
+  props: ['next', 'data'],
   methods: {
     waitForGoToNextPage() {
-      if (this.$store.state.ready) {
+      if (this.$store.state.system.ready) {
         this.$router.replace({
           name: this.next,
           params: this.data,
         });
       } else {
-        setTimeout(this.waitForGoToNextPage, Constant.RETRY_TIMEOUT);
+        setTimeout(this.waitForGoToNextPage, Constant.TIMEOUT.RETRY);
       }
     },
   },
   mounted() {
     if (this.next) this.waitForGoToNextPage();
-    else this.$router.replace({ name: Constant.ROUTER_TAG_NOT_FOUND });
+    else this.$router.replace({name: Constant.ROUTER_TAG.NOT_FOUND});
   },
 };
 </script>

@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -19,27 +19,27 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
-import axios from "axios";
+import axios from 'axios';
 
 export default {
-  name: "PictureViewer",
+  name: 'PictureViewer',
   components: {
     Back,
   },
-  props: ["messageId"],
+  props: ['messageId'],
   methods: {
     async downloadImage(imageSource) {
       return await axios(imageSource, {
-        method: "GET",
-        responseType: "arraybuffer",
+        method: 'GET',
+        responseType: 'arraybuffer',
         headers: {
-          Accept: "image/jpeg",
-          "X-Line-Access": this.$store.state.authToken,
-          "X-Line-Application": Constant.LINE_APPLICATION_IDENTITY,
+          'Accept': 'image/jpeg',
+          'X-Line-Access': this.$store.state.authToken,
+          'X-Line-Application': Constant.LINE.APPLICATION_IDENTITY,
         },
       });
     },
@@ -47,8 +47,8 @@ export default {
       const imageURL = `${this.mediaURL}/os/m/${this.messageId}`;
       const imageXHR = await this.downloadImage(imageURL);
       this.resource =
-        "data:image/jpeg;base64," +
-        Buffer.from(imageXHR.data).toString("base64");
+        'data:image/jpeg;base64,' +
+        Buffer.from(imageXHR.data).toString('base64');
     },
   },
   computed: {
@@ -59,7 +59,7 @@ export default {
   data() {
     return {
       resource: null,
-      mediaURL: Constant.LINE_MEDIA_URL,
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   created() {

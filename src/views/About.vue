@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -21,9 +21,6 @@
       <p>
         Special thanks to:
         <a href="https://vue.js/" target="_blank" rel="noopener">Vue.js</a>,
-        <a href="https://starinc.xyz/" target="_blank" rel="noopener"
-          >Star Inc.</a
-        >,
         <a href="https://icons.getbootstrap.com/" target="_blank" rel="noopener"
           >Bootstrap Icons</a
         ><!-- ,<a href="https://linecorp.com/" target="_blank" rel="noopener"
@@ -52,10 +49,10 @@
 </template>
 
 <script>
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
 export default {
-  name: "Chat",
+  name: 'Chat',
   components: {
     Back,
   },

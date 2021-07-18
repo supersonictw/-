@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -18,10 +18,10 @@
 </template>
 
 <script>
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
 export default {
-  name: "Settings",
+  name: 'Settings',
   components: {
     Back,
   },

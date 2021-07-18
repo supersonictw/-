@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -126,19 +126,18 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
-import axios from "axios";
-import hash from "js-sha256";
-import imageUpload from "vue-image-crop-upload";
+import axios from 'axios';
+import hash from 'js-sha256';
+import imageUpload from 'vue-image-crop-upload';
 
-import lineClient from "@/computes/line.js";
-import lineType from "@/computes/protocol/line_types.js";
+import lineType from '@/computes/protocol/line_types.js';
 
 export default {
-  name: "Create",
+  name: 'Create',
   components: {
     Back,
     imageUpload,
@@ -146,18 +145,19 @@ export default {
   methods: {
     async waitForFetchData() {
       setTimeout(() => {
-        if (this.$store.state.ready) {
+        if (this.$store.state.system.ready) {
           this.fetchContacts();
         } else {
           this.waitForFetchData();
         }
-      }, Constant.RETRY_TIMEOUT);
+      }, Constant.TIMEOUT.RETRY);
     },
     async fetchContacts() {
-      let cursor = await this.$store.state.idbUser
-        .transaction(Constant.IDB_USER_CONTACT)
-        .store.index("displayName")
-        .openCursor();
+      let cursor = await this.$store.state
+          .system.instances.idb.user
+          .transaction(Constant.IDB.USER.CONTACT)
+          .store.index('displayName')
+          .openCursor();
       while (cursor) {
         this.contacts.push(cursor.value);
         cursor = await cursor.continue();
@@ -185,37 +185,34 @@ export default {
       return this.selected.includes(userId);
     },
     moveToBottom() {
-      const element = document.getElementById("body");
+      const element = document.getElementById('body');
       if (element) element.scroll(0, element.scrollHeight);
     },
     async create() {
       if (this.createType > 0 && this.createName.length > 0) {
         this.created = true;
-        const client = lineClient(
-          Constant.LINE_QUERY_PATH,
-          this.$store.state.authToken
-        );
+        const client = this.$store.state.system.clients.query;
         switch (this.createType) {
           case lineType.MIDType.GROUP: {
             const group = await client.createGroup(
-              Constant.THRIFT_DEFAULT_SEQ,
-              this.createName,
-              this.selected
+                Constant.THRIFT_DEFAULT_SEQ,
+                this.createName,
+                this.selected,
             );
             if (group) {
               if (this.createPicture) await this.uploadPicture(group.id);
               setTimeout(
-                () =>
-                  this.$router.push({
-                    name: Constant.ROUTER_TAG_CHAT,
-                    params: { targetIdHashed: hash.sha256(group.id) },
-                  }),
-                Constant.WAIT_TIMEOUT
+                  () =>
+                    this.$router.push({
+                      name: Constant.ROUTER_TAG.CHAT,
+                      params: {targetIdHash: hash.sha256(group.id)},
+                    }),
+                  Constant.TIMEOUT.WAIT,
               );
             } else {
               this.$router.replace({
-                name: Constant.ROUTER_TAG_ERROR,
-                params: { reason: "Error occurred while creating a group." },
+                name: Constant.ROUTER_TAG.ERROR,
+                params: {reason: 'Error occurred while creating a group.'},
               });
             }
             break;
@@ -224,43 +221,43 @@ export default {
       }
     },
     async uploadPicture(targetId) {
-      let data = new FormData();
+      const data = new FormData();
       const filename = Date.now().toString();
       const picture = this.b64StringToFileObject(this.createPicture, filename);
       data.append(
-        "params",
-        JSON.stringify({
-          ver: "1.0",
-          type: "image",
-          oid: targetId,
-          name: picture.name,
-          size: picture.size,
-        })
+          'params',
+          JSON.stringify({
+            ver: '1.0',
+            type: 'image',
+            oid: targetId,
+            name: picture.name,
+            size: picture.size,
+          }),
       );
-      data.append("file", picture);
+      data.append('file', picture);
       await axios(`${this.mediaURL}/talk/g/upload.nhn`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "multipart/form-data",
-          "X-Line-Access": this.$store.state.authToken,
-          "X-Line-Application": Constant.LINE_APPLICATION_IDENTITY,
+          'Content-Type': 'multipart/form-data',
+          'X-Line-Access': this.$store.state.authToken,
+          'X-Line-Application': Constant.LINE.APPLICATION_IDENTITY,
         },
         data,
       });
       return true;
     },
     b64StringToFileObject(b64String, filename) {
-      var arr = b64String.split(","),
-        mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]),
-        n = bstr.length,
-        u8arr = new Uint8Array(n);
+      const arr = b64String.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
       while (n--) {
         u8arr[n] = bstr.charCodeAt(n);
       }
-      return new File([u8arr], filename, { type: mime });
+      return new File([u8arr], filename, {type: mime});
     },
-    async mobileUIhandler(e) {
+    async mobileDetector(e) {
       this.mobileUI = e.target.innerWidth < Constant.MOBILE_UI_WIDTH;
     },
   },
@@ -280,43 +277,43 @@ export default {
       return layout;
     },
   },
-  props: ["type"],
+  props: ['type'],
   data() {
     return {
       created: false,
       uploading: false,
       createType: -1,
-      createName: "",
-      createPicture: "",
+      createName: '',
+      createPicture: '',
       contacts: [],
       selected: [],
-      filterName: "",
+      filterName: '',
       displayContactValue: false,
-      mediaURL: Constant.LINE_MEDIA_URL,
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
       mobileUI: window.innerWidth < Constant.MOBILE_UI_WIDTH,
     };
   },
   created() {
-    window.addEventListener("resize", this.mobileUIhandler);
+    window.addEventListener('resize', this.mobileDetector);
   },
   mounted() {
     if (this.type) {
       switch (this.type) {
-        case "group":
+        case 'group':
           this.createType = lineType.MIDType.GROUP;
           break;
       }
     } else {
       this.$router.replace({
-        name: Constant.ROUTER_TAG_ERROR,
-        params: { reason: "Unknown CreateType." },
+        name: Constant.ROUTER_TAG.ERROR,
+        params: {reason: 'Unknown CreateType.'},
       });
       return;
     }
     this.waitForFetchData();
   },
   destroyed() {
-    window.removeEventListener("resize", this.mobileUIhandler);
+    window.removeEventListener('resize', this.mobileDetector);
   },
 };
 </script>

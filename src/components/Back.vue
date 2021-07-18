@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -17,15 +17,15 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
 export default {
-  name: "Back",
+  name: 'Back',
   methods: {
     back() {
-      window.history.length > 1
-        ? this.$router.go(-1)
-        : this.$router.push({ name: Constant.ROUTER_TAG_INTRODUCING });
+      window.history.length > 1 ?
+        this.$router.go(-1) :
+        this.$router.push({name: Constant.ROUTER_TAG.INTRODUCING});
     },
   },
 };
@@ -38,7 +38,7 @@ export default {
   margin-left: 30px;
   background: rgba(0, 0, 0, 0);
   border-radius: 50px;
-  border: #42b983 1.5px solid;
+  border: #42b983 2px solid;
 }
 
 #back:hover {

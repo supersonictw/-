@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -36,12 +36,12 @@
               :src="`${mediaURL}/${getUserInfo(item.origin).pictureStatus}`"
             />
             <img class="picture-icon" v-else src="@/assets/logo.svg" />
-            <h3 v-if="item.origin != getMyUserId" class="name">
+            <h3 v-if="item.origin !== getMyUserId" class="name">
               {{ getUserInfo(item.origin).displayName }}
             </h3>
           </div>
           <div :class="`${configureMsgBox(2, item)} content`">
-            <p v-if="item.type == 1">
+            <p v-if="item.type === 1">
               <a
                 title="View full image"
                 href="#"
@@ -50,7 +50,7 @@
                 <img :src="mediaObjects[item.id]" />
               </a>
             </p>
-            <p v-else-if="item.type == 7">
+            <p v-else-if="item.type === 7">
               <img :src="mediaObjects[item.id]" />
             </p>
             <p v-else v-html="item.content"></p>
@@ -101,13 +101,13 @@
           </div>
         </div>
         <textarea
-          v-show="inputType == 0"
+          v-show="inputType === 0"
           class="msg-input msg-input-text"
           v-model="inputText"
           @keydown.enter.exact="sendMessage"
         />
         <input
-          v-show="inputType == 1"
+          v-show="inputType === 1"
           ref="file"
           type="file"
           id="file-upload"
@@ -130,19 +130,18 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Back from "@/components/Back.vue";
+import Back from '@/components/Back.vue';
 
-import axios from "axios";
-import moment from "moment";
-import VEmojiPicker from "v-emoji-picker";
+import axios from 'axios';
+import moment from 'moment';
+import VEmojiPicker from 'v-emoji-picker';
 
-import lineClient from "@/computes/line.js";
-import lineType from "@/computes/protocol/line_types.js";
+import lineType from '@/computes/protocol/line_types.js';
 
 export default {
-  name: "Chat",
+  name: 'Chat',
   components: {
     Back,
     VEmojiPicker,
@@ -150,65 +149,69 @@ export default {
   methods: {
     async fetchChatRoomInformation() {
       if (this.targetId === -1) {
-        if (!this.$store.state.ready) {
-          this.$router.replace({
-            name: Constant.ROUTER_TAG_REDIRECT,
+        if (!this.$store.state.system.ready) {
+          await this.$router.replace({
+            name: Constant.ROUTER_TAG.REDIRECT,
             params: {
-              next: Constant.ROUTER_TAG_CHAT,
-              data: { targetIdHashed: this.targetIdHashed },
+              next: Constant.ROUTER_TAG.CHAT,
+              data: {targetIdHash: this.targetIdHash},
             },
           });
           return false;
         }
       }
-      if (this.targetId.startsWith("u")) {
-        this.chatRoomInfo = await this.$store.state.idbUser.get(
-          Constant.IDB_USER_CONTACT,
-          this.targetId
-        );
+      if (this.targetId.startsWith('u')) {
+        this.chatRoomInfo = await this.$store.state.system
+            .instances.idb.user.get(
+                Constant.IDB.USER.CONTACT,
+                this.targetId,
+            );
         this.chatRoomTitle = this.chatRoomInfo.displayName;
         this.chatRoomPicture = this.chatRoomInfo.pictureStatus;
         this.chatRoomType = lineType.MIDType.USER;
         return true;
-      } else if (this.targetId.startsWith("c")) {
-        this.chatRoomInfo = await this.$store.state.idbUser.get(
-          Constant.IDB_USER_GROUP_JOINED,
-          this.targetId
-        );
+      } else if (this.targetId.startsWith('c')) {
+        this.chatRoomInfo = await this.$store.state.system
+            .instances.idb.user.get(
+                Constant.IDB.USER.GROUP.JOINED,
+                this.targetId,
+            );
         this.chatRoomTitle = this.chatRoomInfo.name;
         this.chatRoomPicture = this.chatRoomInfo.pictureStatus;
         this.chatRoomType = lineType.MIDType.GROUP;
         return true;
       }
-      this.$router.replace({
-        name: Constant.ROUTER_TAG_ERROR,
-        params: { reason: "Unknown Chat Room type." },
+      await this.$router.replace({
+        name: Constant.ROUTER_TAG.ERROR,
+        params: {reason: 'Unknown Chat Room type.'},
       });
     },
     configureMsgBox(queryType, message) {
       switch (queryType) {
         case 0:
-          return message.origin === this.getMyUserId ? "self" : "another";
+          return message.origin === this.getMyUserId ? 'self' : 'another';
         case 1:
           return (
-            message.origin != this.getMyUserId &&
-            this.chatRoomType != lineType.MIDType.USER
+            message.origin !== this.getMyUserId &&
+            this.chatRoomType !== lineType.MIDType.USER
           );
         case 2:
-          return this.chatRoomType === lineType.MIDType.USER
-            ? "content-contact"
-            : "";
+          return this.chatRoomType === lineType.MIDType.USER ?
+            'content-contact' :
+            '';
       }
     },
     async fetchDisplayMessage() {
-      if (!this.$store.state.ready)
-        setTimeout(this.fetchDisplayMessage, Constant.RETRY_TIMEOUT);
-      let cursor = await this.$store.state.idbUser
-        .transaction(Constant.IDB_USER_MESSAGE_BOX)
-        .store.index("target")
-        .openCursor(IDBKeyRange.only(this.targetId), "prev");
+      if (!this.$store.state.system.ready) {
+        setTimeout(this.fetchDisplayMessage, Constant.TIMEOUT.RETRY);
+      }
+      let cursor = await this.$store.state
+          .system.instances.idb.user
+          .transaction(Constant.IDB.USER.MESSAGE_BOX)
+          .store.index('target')
+          .openCursor(IDBKeyRange.only(this.targetId), 'prev');
       while (cursor) {
-        if (this.messages.length > Constant.CHAT_DISPLAY_ROW_LITMIT) {
+        if (this.messages.length > Constant.CHAT_DISPLAY_ROW_LIMIT) {
           this.messages.shift();
         }
         if (!this.initialized) {
@@ -230,42 +233,48 @@ export default {
       this.initialized = true;
       await this.fetchDisplayMessage();
     },
-    async downloadImage(imageSource) {
-      return await axios(imageSource, {
-        method: "GET",
-        responseType: "arraybuffer",
+    downloadImage(imageSource) {
+      return axios(imageSource, {
+        method: 'GET',
+        responseType: 'arraybuffer',
         headers: {
-          Accept: "image/jpeg",
-          "X-Line-Access": this.$store.state.authToken,
-          "X-Line-Application": Constant.LINE_APPLICATION_IDENTITY,
+          'Accept': 'image/jpeg',
+          'X-Line-Access': this.$store.state.authToken,
+          'X-Line-Application': Constant.LINE.APPLICATION_IDENTITY,
         },
       });
     },
     async getStickerImageResource(messageId, contentMetadata) {
       if (messageId in this.mediaObjects) return;
-      const stickerVersion =
+      const version =
         Math.floor(contentMetadata.STKVER / 1000000) +
-        "/" +
+        '/' +
         Math.floor(contentMetadata.STKVER / 1000) +
-        "/" +
+        '/' +
         (contentMetadata.STKVER % 1000);
-      const stickerURL = `${Constant.LINE_STICKER_URL}/products/${stickerVersion}/${contentMetadata.STKPKGID}/${Constant.LINE_STICKER_PLATFORM}/stickers/${contentMetadata.STKID}.png`;
+      const platform = Constant.LINE.STICKER.PLATFORM;
+      const packageId = contentMetadata.STKPKGID.toString();
+      const stickerId = contentMetadata.STKID.toString();
+      const domain = Constant.LINE.STICKER.HOST;
+      const path = `/products/${version}/${packageId}/${platform}/stickers/`;
+      const stickerFileName = `${stickerId}.png`;
+      const stickerURL = `//${domain}${path}${stickerFileName}`;
       this.$set(this.mediaObjects, messageId, stickerURL);
     },
     async getImageResource(messageId, messageOrigin) {
       if (!messageId || messageId in this.mediaObjects) return;
-      if (this.getMyUserId == messageOrigin && this.checkUploadBox) {
+      if (this.getMyUserId === messageOrigin && this.checkUploadBox) {
         return setTimeout(
-          (messageId, messageOrigin) =>
-            this.getImageResource(messageId, messageOrigin),
-          Constant.RETRY_TIMEOUT
+            (messageId, messageOrigin) =>
+              this.getImageResource(messageId, messageOrigin),
+            Constant.TIMEOUT.RETRY,
         );
       }
       const imageURL = `${this.mediaURL}/os/m/${messageId}/preview`;
       const imageXHR = await this.downloadImage(imageURL);
       const imageB64 =
-        "data:image/jpeg;base64," +
-        Buffer.from(imageXHR.data).toString("base64");
+        'data:image/jpeg;base64,' +
+        Buffer.from(imageXHR.data).toString('base64');
       this.$set(this.mediaObjects, messageId, imageB64);
     },
     showEmojiBox() {
@@ -273,10 +282,10 @@ export default {
     },
     updateInputType(e) {
       switch (e.target.id) {
-        case "text":
+        case 'text':
           this.inputType = 0;
           break;
-        case "image":
+        case 'image':
           this.inputType = 1;
           break;
       }
@@ -286,15 +295,15 @@ export default {
     },
     sendMessage() {
       this.moveToBottom();
-      if (this.inputType == 0 && this.inputText.length < 1) return;
-      this.sendMessageProccess(
-        this.inputType,
-        this.inputText,
-        this.$refs.file.files
+      if (this.inputType === 0 && this.inputText.length < 1) return;
+      this.sendMessageProcess(
+          this.inputType,
+          this.inputText,
+          this.$refs.file.files,
       );
-      setTimeout(() => (this.inputText = ""), Constant.WAIT_TIMEOUT);
+      setTimeout(() => (this.inputText = ''), Constant.TIMEOUT.WAIT);
     },
-    async sendMessageProccess(inputType, inputText, fileList) {
+    async sendMessageProcess(inputType, inputText, fileList) {
       let message;
       switch (inputType) {
         case 0:
@@ -306,10 +315,11 @@ export default {
           break;
         case 1:
           if (
-            fileList.length != 1 ||
+            fileList.length !== 1 ||
             this.checkFileTypeForSendMessage(fileList[0].type) === -1
-          )
+          ) {
             break;
+          }
           message = new lineType.Message({
             to: this.targetId,
             contentType: this.checkFileTypeForSendMessage(fileList[0].type),
@@ -323,44 +333,46 @@ export default {
           break;
       }
       if (!message) {
-        this.$router.replace({
-          name: Constant.ROUTER_TAG_ERROR,
-          params: { reason: "Something was wrong while send a message" },
+        await this.$router.replace({
+          name: Constant.ROUTER_TAG.ERROR,
+          params: {reason: 'Something was wrong while send a message'},
         });
         return;
       }
-      const response = await this.client.sendMessage(
-        Constant.THRIFT_DEFAULT_SEQ,
-        message
+      const response = await this.$store.state.system.clients.query.sendMessage(
+          Constant.THRIFT_DEFAULT_SEQ,
+          message,
       );
-      if (inputType == 1) this.uploadMessageAttached(response.id, fileList);
+      if (inputType === 1) {
+        await this.uploadMessageAttached(response.id, fileList);
+      }
     },
     async uploadMessageAttached(messageId, fileList) {
-      if (fileList.length != 1) return;
-      let data = new FormData();
+      if (fileList.length !== 1) return;
+      const data = new FormData();
       data.append(
-        "params",
-        JSON.stringify({
-          ver: "1.0",
-          oid: messageId,
-          size: fileList[0].size,
-          name: fileList[0].name,
-          type: Object.keys(lineType.ContentType)
-            .find(
-              (key) =>
-                lineType.ContentType[key] ==
-                this.checkFileTypeForSendMessage(fileList[0].type)
-            )
-            .toLowerCase(),
-        })
+          'params',
+          JSON.stringify({
+            ver: '1.0',
+            oid: messageId,
+            size: fileList[0].size,
+            name: fileList[0].name,
+            type: Object.keys(lineType.ContentType)
+                .find(
+                    (key) =>
+                      lineType.ContentType[key] ===
+                this.checkFileTypeForSendMessage(fileList[0].type),
+                )
+                .toLowerCase(),
+          }),
       );
-      data.append("file", fileList[0]);
+      data.append('file', fileList[0]);
       await axios(`${this.mediaURL}/talk/m/upload.nhn`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "multipart/form-data",
-          "X-Line-Access": this.$store.state.authToken,
-          "X-Line-Application": Constant.LINE_APPLICATION_IDENTITY,
+          'Content-Type': 'multipart/form-data',
+          'X-Line-Access': this.$store.state.authToken,
+          'X-Line-Application': Constant.LINE.APPLICATION_IDENTITY,
         },
         data,
       });
@@ -368,10 +380,10 @@ export default {
     },
     checkFileTypeForSendMessage(mime) {
       switch (mime) {
-        case "image/png":
-        case "image/jpeg":
+        case 'image/png':
+        case 'image/jpeg':
           return lineType.ContentType.IMAGE;
-        case "image/mpeg4":
+        case 'image/mpeg4':
           return lineType.ContentType.VIDEO;
         default:
           return -1;
@@ -382,41 +394,41 @@ export default {
         case lineType.MIDType.USER:
           return this.chatRoomInfo;
         case lineType.MIDType.GROUP:
-          return this.chatRoomInfo.members.find((user) => user.mid == userId);
+          return this.chatRoomInfo.members.find((user) => user.mid === userId);
         default:
           this.$router.replace({
-            name: Constant.ROUTER_TAG_ERROR,
-            params: { reason: "Contact Metadata not synchronized completely." },
+            name: Constant.ROUTER_TAG.ERROR,
+            params: {reason: 'Contact Metadata not synchronized completely.'},
           });
       }
     },
     sendReadTag(messageId) {
-      this.client.sendChatChecked(
-        Constant.THRIFT_DEFAULT_SEQ,
-        this.targetId,
-        messageId
+      this.$store.state.system.clients.query.sendChatChecked(
+          Constant.THRIFT_DEFAULT_SEQ,
+          this.targetId,
+          messageId,
       );
     },
     moveToBottom(autoScroll = false) {
-      const element = document.getElementById("msg-container");
+      const element = document.getElementById('msg-container');
       if (element) {
         if (
           autoScroll &&
-          element.scrollTop + element.clientHeight == element.scrollHeight
+          element.scrollTop + element.clientHeight === element.scrollHeight
         ) {
-          setTimeout(this.moveToBottom, Constant.WAIT_TIMEOUT);
+          setTimeout(this.moveToBottom, Constant.TIMEOUT.WAIT);
         } else {
           element.scroll(0, element.scrollHeight);
         }
       }
     },
     escapeHtml(text) {
-      let map = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#039;',
       };
 
       return text.replace(/[&<>"']/g, function(m) {
@@ -427,31 +439,32 @@ export default {
       const timeValue = parseInt(uint8arrayTime.toString());
       const nowValue = +new Date();
       const dateTime = moment(timeValue);
-      if (timeValue - nowValue < 86400) return dateTime.format("hh:mm");
-      return dateTime.format("YYYY/MM/DD");
+      if (timeValue - nowValue < 86400) return dateTime.format('hh:mm');
+      return dateTime.format('YYYY/MM/DD');
     },
     viewFullImage(messageId) {
       this.$router.push({
-        name: Constant.ROUTER_TAG_PICTURE_PREVIEW,
-        params: { messageId },
+        name: Constant.ROUTER_TAG.PICTURE_PREVIEW,
+        params: {messageId},
       });
     },
   },
   computed: {
     targetId() {
-      if (!this.$store.state.ready) {
+      if (!this.$store.state.system.ready) {
         return -1;
       }
-      if (this.$store.state.chatIdsHashed.has(this.targetIdHashed))
-        return this.$store.state.chatIdsHashed.get(this.targetIdHashed);
-      this.$router.replace({ name: Constant.ROUTER_TAG_NOT_FOUND });
-      return "";
+      if (this.$store.state.system.chatRoomIdHash.has(this.targetIdHash)) {
+        return this.$store.state.system.chatRoomIdHash.get(this.targetIdHash);
+      }
+      this.$router.replace({name: Constant.ROUTER_TAG.NOT_FOUND});
+      return '';
     },
     getMessages() {
-      let layout = [];
+      const layout = [];
       this.messages.forEach((message) => {
         let layoutType = lineType.ContentType.NONE;
-        let layoutMessage = "";
+        let layoutMessage = '';
         switch (message.contentType) {
           case lineType.ContentType.IMAGE:
             this.getImageResource(message.id, message.from_);
@@ -462,48 +475,49 @@ export default {
             layoutType = lineType.ContentType.STICKER;
             break;
           default:
-            layoutMessage = message.text
-              ? message.text
-              : "[Couldn't display the message on XIA.]";
+            layoutMessage = message.text ?
+              message.text :
+              '[Couldn\'t display the message on XIA.]';
         }
         layout.push({
           id: message.id,
           type: layoutType,
           origin: message.from_,
-          content: this.escapeHtml(layoutMessage).replace(/\n/g, "<br />"),
+          content: this.escapeHtml(layoutMessage).replace(/\n/g, '<br />'),
           time: message.createdTime,
         });
       });
       return layout;
     },
     getMyUserId() {
-      return this.$store.state.profile.userId;
+      return this.$store.state.system.profile.userId;
     },
     checkUploadBox() {
-      if (this.$refs.file == undefined) return;
-      return this.$refs.file.value ? true : false;
+      if (this.$refs.file === undefined) return;
+      return !!this.$refs.file.value;
     },
   },
-  props: ["targetIdHashed"],
+  props: ['targetIdHash'],
   data() {
     return {
       initialized: null,
-      chatRoomTitle: "Unknown",
+      chatRoomTitle: 'Unknown',
       chatRoomPicture: null,
       chatRoomType: 0,
       chatRoomInfo: {},
       inputType: 0,
-      inputText: "",
+      inputText: '',
       messages: [],
       mediaObjects: {},
       messageIdLastSeen: null,
       showEmojiBoxCheckpoint: false,
-      mediaURL: Constant.LINE_MEDIA_URL,
-      client: lineClient(Constant.LINE_QUERY_PATH, this.$store.state.authToken),
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   async mounted() {
-    if (await this.fetchChatRoomInformation()) this.fetchDisplayMessage();
+    if (await this.fetchChatRoomInformation()) {
+      await this.fetchDisplayMessage();
+    }
   },
 };
 </script>

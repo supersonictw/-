@@ -1,4 +1,4 @@
-/*jshint esversion: 8 */
+/* jshint esversion: 8 */
 /*
     XIA - LINE Web Client
     ---
@@ -6,31 +6,31 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 */
 
-require("error-polyfill");
+require('error-polyfill');
 
-import thrift from "thrift";
-import Constant from "@/data/const.js";
-import talkService from "@/computes/protocol/TalkService.js";
+import thrift from 'thrift';
+import Constant from '@/data/const.js';
+import talkService from '@/computes/protocol/TalkService.js';
 
 const lineClient = function(path, authToken = null) {
   const header = {
-    "X-Line-Application": Constant.LINE_APPLICATION_IDENTITY,
+    'X-Line-Application': Constant.LINE.APPLICATION_IDENTITY,
   };
 
   if (authToken !== null) {
-    header["X-Line-Access"] = authToken;
+    header['X-Line-Access'] = authToken;
   }
 
-  const host = Constant.LINE_SERVER_HOST_FOR_THRIFT;
-  const port = Constant.LINE_USE_HTTPS ? 443 : 80;
+  const host = Constant.httpUrlWrapper(Constant.LINE.HOST, null, true);
+  const port = Constant.USE_HTTPS ? 443 : 80;
   const opts = {
     transport: thrift.TBufferedTransport,
     protocol: thrift.TCompactProtocol,
     headers: header,
-    https: Constant.LINE_USE_HTTPS,
+    https: Constant.USE_HTTPS,
     path: path,
     useCORS: true,
   };
@@ -38,7 +38,7 @@ const lineClient = function(path, authToken = null) {
   const connection = thrift.createHttpConnection(host, port, opts);
   const thriftClient = thrift.createHttpClient(talkService, connection);
 
-  connection.on("error", (err) => {
+  connection.on('error', (err) => {
     console.error(err);
   });
 

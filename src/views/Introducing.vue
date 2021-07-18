@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -24,7 +24,7 @@
         </div>
       </div>
     </div>
-    <div class="intro-box with-seprate-line">
+    <div class="intro-box with-separate-line">
       <h2>What is XIA</h2>
       <p>
         XIA is a
@@ -54,22 +54,24 @@
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
 export default {
-  name: "Indroducing",
+  name: 'Introducing',
   methods: {
     async checkAccess() {
-      if (!this.$cookies.isKey(Constant.COOKIE_ACCESS_KEY)) return this.ready--;
+      if (!window.localStorage.getItem(Constant.LOCAL_STORAGE.ACCESS_KEY)) {
+        return this.ready--;
+      }
       if (this.$store.state.loaded) {
-        if (this.$store.state.ready) return this.ready++;
+        if (this.$store.state.system.ready) return this.ready++;
         else return this.ready--;
       }
-      setTimeout(this.checkAccess, Constant.RETRY_TIMEOUT);
+      setTimeout(this.checkAccess, Constant.TIMEOUT.RETRY);
     },
   },
   data() {
-    return { ready: 0 };
+    return {ready: 0};
   },
   mounted() {
     this.checkAccess();
@@ -102,7 +104,7 @@ h3 {
   background: #fff;
 }
 
-.with-seprate-line {
+.with-separate-line {
   margin-bottom: 10px;
   border-radius: 0 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.3);

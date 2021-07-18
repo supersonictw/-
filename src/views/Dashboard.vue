@@ -5,7 +5,7 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  (c) 2020 SuperSonic. (https://github.com/supersonictw)
+  (c) 2021 SuperSonic. (https://github.com/supersonictw)
 -->
 
 <template>
@@ -38,24 +38,22 @@
         >
       </div>
       <div id="lists">
-        <ContactList v-show="!mobileUI || tabName == 'Contacts'" />
-        <ChatList v-show="!mobileUI || tabName == 'Chats'" />
+        <ContactList v-show="!mobileUI || tabName === 'Contacts'" />
+        <ChatList v-show="!mobileUI || tabName === 'Chats'" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Constant from "@/data/const.js";
+import Constant from '@/data/const.js';
 
-import Logout from "@/components/Logout.vue";
-import ContactList from "@/components/Dashboard/ContactList.vue";
-import ChatList from "@/components/Dashboard/ChatList.vue";
-
-import lineClient from "@/computes/line.js";
+import Logout from '@/components/Logout.vue';
+import ContactList from '@/components/Dashboard/ContactList.vue';
+import ChatList from '@/components/Dashboard/ChatList.vue';
 
 export default {
-  name: "Dashboard",
+  name: 'Dashboard',
   components: {
     Logout,
     ContactList,
@@ -64,46 +62,46 @@ export default {
   methods: {
     async waitForFetchProfile() {
       setTimeout(() => {
-        if (this.$store.state.ready) {
+        if (this.$store.state.system.ready) {
           this.fetchProfile();
         } else {
           this.waitForFetchProfile();
         }
-      }, Constant.RETRY_TIMEOUT);
+      }, Constant.TIMEOUT.RETRY);
     },
     fetchProfile() {
-      this.profileDisplayName = this.$store.state.profile.displayName;
-      this.profileStatusMessage = this.$store.state.profile.statusMessage;
-      this.profilePicturePath = this.$store.state.profile.picturePath;
+      const profile = this.$store.state.system.profile;
+      this.profileDisplayName = profile.displayName;
+      this.profilePicturePath = profile.picturePath;
+      this.profileStatusMessage = profile.statusMessage;
     },
     tabSwitcher() {
       const tabs = [this.tabName, this.tabSwitcherName];
-      this.tabName = this.tabName == tabs[0] ? tabs[1] : tabs[0];
+      this.tabName = this.tabName === tabs[0] ? tabs[1] : tabs[0];
       this.tabSwitcherName =
-        this.tabSwitcherName == tabs[0] ? tabs[1] : tabs[0];
+        this.tabSwitcherName === tabs[0] ? tabs[1] : tabs[0];
     },
-    async mobileUIhandler(e) {
+    async mobileDetector(e) {
       this.mobileUI = e.target.innerWidth < Constant.MOBILE_UI_WIDTH;
     },
   },
   data() {
     return {
-      tabName: "Contacts",
-      tabSwitcherName: "Chats",
+      tabName: 'Contacts',
+      tabSwitcherName: 'Chats',
       mobileUI: window.innerWidth < Constant.MOBILE_UI_WIDTH,
-      client: lineClient(Constant.LINE_QUERY_PATH, this.$store.state.authToken),
-      profileDisplayName: "Loading...",
-      profileStatusMessage: "Loading...",
+      profileDisplayName: 'Loading...',
+      profileStatusMessage: 'Loading...',
       profilePicturePath: null,
-      mediaURL: Constant.LINE_MEDIA_URL,
+      mediaURL: `//${Constant.LINE.MEDIA.HOST}`,
     };
   },
   created() {
-    window.addEventListener("resize", this.mobileUIhandler);
+    window.addEventListener('resize', this.mobileDetector);
     this.waitForFetchProfile();
   },
   destroyed() {
-    window.removeEventListener("resize", this.mobileUIhandler);
+    window.removeEventListener('resize', this.mobileDetector);
   },
 };
 </script>

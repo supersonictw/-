@@ -6,7 +6,7 @@
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-  Copyright(c) 2020 SuperSonic. (https://github.com/supersonictw)
+  Copyright(c) 2021 SuperSonic. (https://github.com/supersonictw)
 
 # 3rd-Party Software for [XIA](https://github.com/supersonictw/xia)
 
